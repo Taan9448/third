@@ -35,14 +35,14 @@ with sync_playwright() as p:
  assert set(proof['skill'])>=set(map(str,range(4))),proof
  assert saved()['battle']['enemies'][0]['hp']==15 and saved()['battle']['energy']==2
  page.evaluate('''()=>{window.enemyFrames=new Set();const tick=()=>{const s=document.querySelector('#scene');if(s)enemyFrames.add(s.dataset.enemyAttackFrame);requestAnimationFrame(tick)};tick();}''')
- page.locator('[data-action=endturn]').click();page.wait_for_timeout(1400)
+ page.locator('[data-action=endturn]').click();page.wait_for_timeout(1700)
  assert set(page.evaluate('[...enemyFrames]'))>=set(map(str,range(6)))
  # Complete the real first encounter with UI buttons.
  for _ in range(12):
   if saved()['phase']!='battle':break
   card=page.locator('.hand [data-action=play]:not(.unplayable)').first
   if card.count():card.click();page.wait_for_selector('.cast-layer',state='detached')
-  else:page.locator('[data-action=endturn]').click();page.wait_for_timeout(1400)
+  else:page.locator('[data-action=endturn]').click();page.wait_for_timeout(1700)
  assert saved()['phase']=='reward'
  page.locator('[data-action=skipreward]').click()
  page.locator('[data-action=node]:not(:disabled)').first.click()

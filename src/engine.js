@@ -6,13 +6,13 @@ export function shuffle(items,rng=Math.random) {
 }
 export class Game {
  constructor(saved=null,rng=Math.random){this.rng=rng;this.state=saved || this.create();}
- create(){return {version:VERSION,chapter:0,floor:0,phase:'battle',gold:80,journeyVersion:2,deck:['slash','guard','slash','guard','slash','guard','focus','flash'].map((id,i)=>({id,uid:i+1,upgraded:false})),nextUid:9,party:HEROES.slice(0,1).map(h=>({...h,hp:h.maxHp,block:0})),relics:['pendant'],history:[],battles:0,battle:null,reward:[],introSeen:false};}
+ create(){return {version:VERSION,chapter:0,floor:0,phase:'battle',gold:80,journeyVersion:2,deck:['slash','guard','slash','guard','slash','guard','focus','flash'].map((id,i)=>({id,uid:i+1,upgraded:false})),nextUid:9,party:HEROES.slice(0,1).map(h=>({...h,hp:h.maxHp,block:0,weak:0,burn:0,frozen:0})),relics:['pendant'],history:[],battles:0,battle:null,reward:[],introSeen:false};}
  get s(){return this.state;}
  init(){if(!this.s.battle&&this.s.phase==='battle')this.startBattle('battle',true);return this;}
  log(text){this.s.history.unshift(text);this.s.history=this.s.history.slice(0,50);}
  addCard(id){if(!CARDS[id])return false;this.s.deck.push({id,uid:this.s.nextUid++,upgraded:false});return true;}
  heal(amount,revive=false){this.s.party.forEach(h=>{if(h.hp>0||revive)h.hp=Math.min(h.maxHp,h.hp+amount);});}
- recruit(id){if(this.s.party.some(h=>h.id===id))return false;const h=HEROES.find(h=>h.id===id);if(!h)return false;this.s.party.push({...h,hp:h.maxHp,block:0});const cards=id==='lyra'?['spark','spark','ward','frost']:['protect','protect','bash','bond'];cards.forEach(c=>this.addCard(c));this.log(h.name+' 합류 · '+cards.length+'장 획득');return true;}
+ recruit(id){if(this.s.party.some(h=>h.id===id))return false;const h=HEROES.find(h=>h.id===id);if(!h)return false;this.s.party.push({...h,hp:h.maxHp,block:0,weak:0,burn:0,frozen:0});const cards=id==='lyra'?['spark','spark','ward','frost']:['protect','protect','bash','bond'];cards.forEach(c=>this.addCard(c));this.log(h.name+' 합류 · '+cards.length+'장 획득');return true;}
  finishStory(){if(this.s.phase!=='story'||this.s.chapter!==0||![1,3].includes(this.s.floor)||this.s.journeyVersion!==2)return false;this.recruit(this.s.floor===1?'lyra':'aria');this.finishNode();return true;}
  get nodes(){const f=this.s.floor;if(this.s.journeyVersion===2&&this.s.chapter===0&&[1,3].includes(f))return ['story'];const sets=[['battle','battle'],['event','shop'],['elite','battle'],['rest','event'],['battle','elite'],['boss']];return sets[f] || [];}
  startBattle(type='battle',opening=false){
@@ -22,8 +22,8 @@ export class Game {
  else if(c===2&&this.s.floor===4)ids=['cult'];
  else if(type==='elite')ids=c===2?['cult']:c===0?['knight','wisp']:c===1?['knight','knight']:['horror','wisp'];
  else ids=c===0?['wolf','wisp']:c===1?['knight','wisp']:c===2?['assassin','assassin']:['horror','wisp'];
- const enemies=ids.map((id,i)=>{const e=ENEMIES[id],solo=this.s.party.length===1,hp=(solo?24:e.hp)+(type==='boss'?0:c*5)+(type==='elite'?8:0);return {...e,id,uid:i,hp,maxHp:hp,attack:(solo?5:e.attack)+(type==='boss'?0:c),block:0,weak:0,target:i%this.s.party.length};});
- this.s.party.forEach(h=>h.block=0);
+ const enemies=ids.map((id,i)=>{const e=ENEMIES[id],solo=this.s.party.length===1,hp=(solo?24:e.hp)+(type==='boss'?0:c*5)+(type==='elite'?8:0);return {...e,id,uid:i,hp,maxHp:hp,attack:(solo?5:e.attack)+(type==='boss'?0:c),block:0,weak:0,burn:0,frozen:0,target:i%this.s.party.length};});
+ this.s.party.forEach(h=>{h.block=0;h.weak=0;h.burn=0;h.frozen=0;});
  this.s.battle={type,enemies,turn:1,energy:3,qi:0,mana:this.s.relics.reduce((n,id)=>n+(RELICS[id].startMana||0),0),combo:0,lastOwner:null,linkCharge:0,selected:0,draw:shuffle(this.s.deck,this.rng),discard:[],hand:[]};
  this.s.phase='battle';
  if(opening){const fixed=this.s.party.length===1?['slash','guard','slash','focus','flash']:['slash','spark','protect','bond','moon'];fixed.forEach(id=>{const i=this.s.battle.draw.findIndex(x=>x.id===id);if(i>=0)this.s.battle.hand.push(this.s.battle.draw.splice(i,1)[0]);});if(this.s.battle.hand.length<5)this.draw(5-this.s.battle.hand.length);}else this.draw(5);
@@ -31,8 +31,8 @@ export class Game {
  }
  turnRelics(){this.s.battle.qi=Math.min(6,this.s.battle.qi+this.s.relics.reduce((n,id)=>n+(RELICS[id].turnQi||0),0));}
  draw(n){const b=this.s.battle;for(let i=0;i<n&&b.hand.length<10;i++){if(!b.draw.length){if(!b.discard.length)break;b.draw=shuffle(b.discard,this.rng);b.discard=[];}b.hand.push(b.draw.pop());}}
- intent(e){const b=this.s.battle;if(b.turn%3===0){if(['thorn','demon','hell'].includes(e.id))return {type:'sweep',amount:e.id==='thorn'?9:e.id==='demon'?11:e.hp<e.maxHp/2?15:12,label:e.id==='thorn'?'가시 폭풍':e.id==='demon'?'멸성':'경계 붕괴',target:e.target};return {type:'heavy',amount:e.attack+(e.id==='master'?8:5),label:e.id==='master'?'무영검':'강공',target:e.target};}if(b.turn%4===0)return {type:'guard',amount:12,label:'방어',target:e.target};return {type:'attack',amount:e.attack,label:'공격',target:e.target};}
- canPlay(instance){const b=this.s.battle,c=cardInfo(instance);if(this.s.phase!=='battle')return '전투 중에만 사용할 수 있습니다.';if(!this.s.party.find(h=>h.id===c.owner&&h.hp>0))return '이 동료는 쓰러졌습니다. 야영지에서 회복하세요.';if(c.cost>b.energy)return '행동력이 부족합니다.';return '';}
+ intent(e){const b=this.s.battle,target=this.s.party[e.target]?.hp>0?e.target:Math.max(0,this.s.party.findIndex(h=>h.hp>0));if(e.frozen>0)return {type:'frozen',amount:0,label:'빙결 · 행동 불가',target};if(b.turn%3===0){if(['thorn','demon','hell'].includes(e.id))return {type:'sweep',amount:e.id==='thorn'?9:e.id==='demon'?11:e.hp<e.maxHp/2?15:12,label:e.id==='thorn'?'가시 폭풍':e.id==='demon'?'멸성':'경계 붕괴',target};return {type:'heavy',amount:e.attack+(e.id==='master'?8:5),label:e.id==='master'?'무영검':'강공',target};}if(b.turn%4===0)return {type:'guard',amount:12,label:'방어',target};return {type:'attack',amount:e.attack,label:'공격',target};}
+ canPlay(instance){const b=this.s.battle,c=cardInfo(instance);if(this.s.phase!=='battle')return '전투 중에만 사용할 수 있습니다.';if(!this.s.party.find(h=>h.id===c.owner&&h.hp>0))return '이 동료는 쓰러졌습니다. 야영지에서 회복하세요.';if(this.s.party.find(h=>h.id===c.owner)?.frozen>0)return '빙결 상태: 이 동료는 이번 턴 카드를 사용할 수 없습니다.';if(c.cost>b.energy)return '행동력이 부족합니다.';return '';}
  play(uid){
  const b=this.s.battle;if(this.s.phase!=='battle')return {error:'현재 카드를 사용할 수 없습니다.'};
  const i=b.hand.findIndex(x=>x.uid===uid);if(i<0)return {error:'손패에 없는 카드입니다.'};
@@ -45,7 +45,7 @@ export class Game {
  const combo=b.combo>=3;if(combo){b.combo=0;b.lastOwner=null;effects.push({type:'combo',text:'동료 연계',owner:c.owner});}
  b.linkCharge=Math.min(100,(b.linkCharge||0)+(switched?25:15)+(combo?15:0));
  const comboBonus=combo?5+this.s.relics.reduce((n,id)=>n+(RELICS[id].comboBonus||0),0):0;
- if(c.damage){const targets=c.all?b.enemies.filter(e=>e.hp>0):[b.enemies.find(e=>e.uid===b.selected&&e.hp>0)||b.enemies.find(e=>e.hp>0)];targets.filter(Boolean).forEach(e=>{let actual=0;for(let hit=0;hit<(c.hits||1);hit++){const damage=c.damage+bonus+comboBonus;const absorb=Math.min(e.block,damage);e.block-=absorb;const dealt=Math.min(e.hp,damage-absorb);e.hp-=dealt;actual+=dealt;}if(c.weak)e.weak=Math.max(e.weak,c.weak);effects.push({type:'attack',target:e.uid,amount:actual,owner:c.owner,icon:c.icon,combo:combo||bonus>0});});}
+ if(c.damage){const targets=c.all?b.enemies.filter(e=>e.hp>0):[b.enemies.find(e=>e.uid===b.selected&&e.hp>0)||b.enemies.find(e=>e.hp>0)];targets.filter(Boolean).forEach(e=>{let actual=0;for(let hit=0;hit<(c.hits||1);hit++){const damage=Math.floor((c.damage+bonus+comboBonus)*(this.s.party.find(h=>h.id===c.owner).weak>0?.65:1));const absorb=Math.min(e.block,damage);e.block-=absorb;const dealt=Math.min(e.hp,damage-absorb);e.hp-=dealt;actual+=dealt;}if(c.weak)e.weak=Math.max(e.weak,c.weak);if(c.burn)e.burn=Math.min(9,(e.burn||0)+c.burn);if(c.frozen)e.frozen=Math.max(e.frozen||0,c.frozen);effects.push({type:'attack',target:e.uid,amount:actual,owner:c.owner,icon:c.icon,combo:combo||bonus>0});});}
  if(c.block)this.s.party.filter(h=>h.hp>0).forEach(h=>{h.block+=c.block+comboBonus;});
  else if(combo&&!c.damage)this.s.party.filter(h=>h.hp>0).forEach(h=>h.block+=comboBonus);
  if(c.block)effects.push({type:'block',amount:c.block,owner:c.owner});
@@ -63,7 +63,7 @@ export class Game {
   const c=cardInfo(instance),resonate=!!c.spendQi&&b.qi>=c.spendQi&&b.mana>=c.spendMana;
   const combo=b.combo===2&&b.lastOwner!==c.owner;
   const extra=(resonate?c.bonus:0)+(combo?5+this.s.relics.reduce((n,id)=>n+(RELICS[id].comboBonus||0),0):0);
-  const raw=c.damage?c.damage+extra:0;
+  const raw=c.damage?Math.floor((c.damage+extra)*(this.s.party.find(h=>h.id===c.owner)?.weak>0?.65:1)):0;
   const targets=c.damage?(c.all?b.enemies.filter(e=>e.hp>0):[b.enemies.find(e=>e.uid===b.selected&&e.hp>0)||b.enemies.find(e=>e.hp>0)]):[];
   return {resonate,combo,raw,block:c.block?c.block+extra:combo&&!c.damage?extra:0,heal:c.heal||0,targets:targets.filter(Boolean).map(e=>({uid:e.uid,damage:Math.min(e.hp,Math.max(0,raw*(c.hits||1)-e.block))}))};
  }
@@ -71,6 +71,7 @@ export class Game {
   if(this.s.phase!=='battle')return '전투 중에만 사용할 수 있습니다.';
   if(this.s.party.length<2)return '동료 합류 후 사용할 수 있습니다.';
   if(!Object.hasOwn(ULTIMATES,id))return '알 수 없는 절기입니다.';
+  if(this.s.party.find(h=>h.id===ULTIMATES[id].owner)?.frozen>0)return '빙결 상태: 이 동료는 절기를 사용할 수 없습니다.';
   if((this.s.battle.linkCharge||0)<100)return '합격 게이지가 부족합니다.';
   if(!this.s.party.some(h=>h.id===ULTIMATES[id].owner&&h.hp>0))return '이 절기를 이끄는 동료가 쓰러졌습니다.';
   return '';
@@ -80,7 +81,7 @@ export class Game {
   const b=this.s.battle,c=ULTIMATES[id],effects=[];b.linkCharge=0;
   if(c.damage){
    const foes=c.all?b.enemies.filter(e=>e.hp>0):[b.enemies.find(e=>e.uid===b.selected&&e.hp>0)||b.enemies.find(e=>e.hp>0)];
-   foes.filter(Boolean).forEach(e=>{const absorb=Math.min(e.block,c.damage);e.block-=absorb;const amount=Math.min(e.hp,c.damage-absorb);e.hp-=amount;if(c.weak)e.weak=Math.max(e.weak,c.weak);effects.push({type:'attack',target:e.uid,amount,owner:c.owner,combo:true});});
+   foes.filter(Boolean).forEach(e=>{const damage=Math.floor(c.damage*(this.s.party.find(h=>h.id===c.owner).weak>0?.65:1)),absorb=Math.min(e.block,damage);e.block-=absorb;const amount=Math.min(e.hp,damage-absorb);e.hp-=amount;if(c.weak)e.weak=Math.max(e.weak,c.weak);if(c.burn)e.burn=Math.min(9,(e.burn||0)+c.burn);if(c.frozen)e.frozen=Math.max(e.frozen||0,c.frozen);effects.push({type:'attack',target:e.uid,amount,owner:c.owner,combo:true});});
   }
   if(c.block){this.s.party.filter(h=>h.hp>0).forEach(h=>h.block+=c.block);effects.push({type:'block',amount:c.block,owner:c.owner});}
   if(c.heal){this.heal(c.heal);effects.push({type:'heal',amount:c.heal,owner:c.owner});}
@@ -93,7 +94,12 @@ export class Game {
  endTurn(){
  if(this.s.phase!=='battle')return [];
  const b=this.s.battle,effects=[];
- b.enemies.filter(e=>e.hp>0).forEach(e=>{e.block=0;const intent=this.intent(e);if(intent.type==='guard'){e.block+=intent.amount;effects.push({type:'enemyBlock',target:e.uid,amount:intent.amount});}else{let target=this.s.party[e.target];if(!target||target.hp<=0)target=this.s.party.find(h=>h.hp>0);const targets=intent.type==='sweep'?this.s.party.filter(h=>h.hp>0):target?[target]:[];targets.forEach(h=>{const damage=Math.floor(intent.amount*(e.weak>0?.65:1)),absorb=Math.min(h.block,damage);h.block-=absorb;const dealt=Math.min(h.hp,damage-absorb);h.hp-=dealt;effects.push({type:'enemy',target:h.id,source:e.uid,amount:dealt,absorbed:absorb});});}if(e.weak>0)e.weak--;});
+ const burnTick=(actor,enemy)=>{if(actor.hp>0&&actor.burn>0){const amount=Math.min(actor.hp,actor.burn);actor.hp-=amount;actor.burn--;effects.push({type:enemy?'attack':'enemy',target:enemy?actor.uid:actor.id,amount,status:'burn',source:null});}};
+ this.s.party.forEach(h=>{burnTick(h,false);h.frozen=Math.max(0,(h.frozen||0)-1);h.weak=Math.max(0,(h.weak||0)-1);});
+ b.enemies.forEach(e=>burnTick(e,true));
+ if(this.s.party.every(h=>h.hp<=0)){this.s.phase='defeat';return effects;}
+ if(b.enemies.every(e=>e.hp<=0)){this.victory();return effects;}
+ b.enemies.filter(e=>e.hp>0).forEach(e=>{e.block=0;const intent=this.intent(e);if(intent.type==='frozen'){e.frozen--;if(e.weak>0)e.weak--;effects.push({type:'frozen',target:e.uid,amount:0});return;}if(intent.type==='guard'){e.block+=intent.amount;effects.push({type:'enemyBlock',target:e.uid,amount:intent.amount});}else{let target=this.s.party[e.target];if(!target||target.hp<=0)target=this.s.party.find(h=>h.hp>0);const targets=intent.type==='sweep'?this.s.party.filter(h=>h.hp>0):target?[target]:[];targets.forEach(h=>{const damage=Math.floor(intent.amount*(e.weak>0?.65:1)),absorb=Math.min(h.block,damage);h.block-=absorb;const dealt=Math.min(h.hp,damage-absorb);h.hp-=dealt;if(dealt>0){if(['demon','hell'].includes(e.id))h.burn=Math.min(9,(h.burn||0)+2);if(e.id==='wisp'&&b.turn%3===0)h.frozen=1;if(e.id==='master'&&intent.type==='heavy')h.weak=2;}effects.push({type:'enemy',target:h.id,source:e.uid,amount:dealt,absorbed:absorb});});}if(e.weak>0)e.weak--;});
  b.discard.push(...b.hand);b.hand=[];
  if(this.s.party.every(h=>h.hp<=0)){this.s.phase='defeat';this.log('원정 종료 · 다시 시작할 수 있습니다.');return effects;}
  this.s.party.forEach(h=>h.block=0);b.turn++;b.energy=3;b.combo=0;b.lastOwner=null;b.enemies.forEach(e=>{const living=this.s.party.map((h,i)=>h.hp>0?i:-1).filter(i=>i>=0);e.target=living[(b.turn+e.uid)%living.length];});this.turnRelics();this.draw(5);this.log(`${b.turn}번째 턴`);return effects;
@@ -119,12 +125,13 @@ export class Game {
     const b=s.battle;
     if(!b||!['battle','elite','boss'].includes(b.type)||!Array.isArray(b.enemies)||!b.enemies.length||b.enemies.length>4||!b.enemies.every(e=>Object.hasOwn(ENEMIES,e.id)&&integer(e.uid,0,3)&&integer(e.hp,0,e.maxHp)&&integer(e.maxHp,1,10000)&&integer(e.attack,0,1000)&&integer(e.block,0,1000)&&integer(e.weak,0,100)&&integer(e.target,0,s.party.length-1))||!['hand','draw','discard'].every(k=>Array.isArray(b[k])&&b[k].every(validCard))||!integer(b.energy,0,3)||!integer(b.turn,1,10000)||!integer(b.qi,0,6)||!integer(b.mana,0,6)||!integer(b.combo,0,2)||!(b.lastOwner===null||HEROES.some(h=>h.id===b.lastOwner))||!integer(b.selected,0,3))return null;
    }
+   for(const actor of [...s.party,...(s.battle?.enemies||[])]){for(const key of ['weak','burn','frozen']){if(actor[key]==null)actor[key]=0;if(!integer(actor[key],0,key==='burn'?9:100))return null;}}
    if(s.battle){if(s.battle.linkCharge==null)s.battle.linkCharge=0;else if(!integer(s.battle.linkCharge,0,100))return null;}
-   if(s.battle)s.battle.enemies=s.battle.enemies.map(e=>({...ENEMIES[e.id],id:e.id,uid:e.uid,hp:e.hp,maxHp:e.maxHp,attack:e.attack,block:e.block,weak:e.weak,target:e.target}));
+   if(s.battle)s.battle.enemies=s.battle.enemies.map(e=>({...ENEMIES[e.id],id:e.id,uid:e.uid,hp:e.hp,maxHp:e.maxHp,attack:e.attack,block:e.block,weak:e.weak,burn:e.burn,frozen:e.frozen,target:e.target}));
    if(s.journeyVersion!=null&&s.journeyVersion!==2)return null;
    if(s.journeyVersion===2&&(s.chapter>0||s.chapter===0&&s.floor>=4)&&s.party.length!==3)return null;
    if(s.journeyVersion===2&&s.deck.some(c=>!s.party.some(h=>h.id===CARDS[c.id].owner)))return null;
-   s.party=s.party.map((h,i)=>({...HEROES[i],hp:h.hp,block:h.block}));
+   s.party=s.party.map((h,i)=>({...HEROES[i],hp:h.hp,block:h.block,weak:h.weak,burn:h.burn,frozen:h.frozen}));
    return s;
   }catch{return null;}
  }

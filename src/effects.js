@@ -1,3 +1,7 @@
+let impactAtlas=null;
+export function setImpactAtlas(image){impactAtlas=image;}
+export function impactRow(card){return card.id==='frost'?3:card.id==='storm'||card.owner==='aria'||card.status==='burn'?2:card.family==='wuxia'||['slash','flash','moon','lotus','eclipse'].includes(card.id)?0:1;}
+export function animatedImpact(c,card,end,progress,unit){if(!impactAtlas)return;const frame=skillFrame(progress),row=impactRow(card),tw=impactAtlas.width/4,th=impactAtlas.height/4,size=unit*(card.ultimate?4.2:3.1);c.save();c.imageSmoothingEnabled=false;c.globalAlpha*=progress>.90?(1-progress)/.10:1;c.drawImage(impactAtlas,frame*tw,row*th,tw,th,end.x-size/2,end.y-size/2,size,size);c.restore();}
 import {skillFrame,TECHNIQUE_ROWS} from './animation.js';
 let skillAtlases=[];
 export function setSkillAtlases(a,b){skillAtlases=[a,b];}

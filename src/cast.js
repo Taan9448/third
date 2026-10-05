@@ -1,4 +1,4 @@
-import {clamp,ease,circle,spell,impact,animatedSkill} from './effects.js';
+import {clamp,ease,circle,spell,impact,animatedSkill,animatedImpact} from './effects.js';
 function copyCard(source){
  const clone=source.cloneNode(true);clone.removeAttribute('data-action');clone.removeAttribute('data-uid');clone.removeAttribute('aria-disabled');clone.classList.remove('unplayable');clone.tabIndex=-1;
  const src=[...source.querySelectorAll('canvas')];clone.querySelectorAll('canvas').forEach((c,i)=>{c.width=src[i].width;c.height=src[i].height;c.getContext('2d').drawImage(src[i],0,0);});return clone;
@@ -31,7 +31,7 @@ export function castCard({element,card,scene,targets,onImpact,audio}){
   function frame(now){try{
    const actual=now-at,ms=actual/rate,ox=scrollAt.x-scrollX,oy=scrollAt.y-scrollY;
    ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();ctx.translate(ox,oy);
-   root.dataset.skillFrame=String(Math.max(0,Math.min(3,Math.floor((ms-520)/1140*4))));
+   root.dataset.skillFrame=String(Math.max(0,Math.min(3,Math.floor((ms-520)/540*4))));
    root.dataset.phase=ms<220?'lift':ms<520?'fracture':actual<hitAt?'projectile':'impact';
    const lift=ease(ms/220),x=start.x+(origin.x-start.x)*lift,y=start.y+(origin.y-start.y)*lift;
    fly.style.left=(x-r.width/2+ox)+'px';fly.style.top=(y-r.height/2+oy)+'px';fly.style.transform=`rotate(${Math.sin(ms*.045)*clamp((ms-220)/140)*2}deg) scale(${1+lift*.06})`;fly.style.opacity=ms<520?1:0;
@@ -43,8 +43,8 @@ export function castCard({element,card,scene,targets,onImpact,audio}){
    shards.forEach((s,i)=>{const t=clamp((ms-520)/470);s.el.style.display=ms>=520&&t<1?'block':'none';s.el.style.left=(origin.x-r.width/2+s.dx*ease(t)+ox)+'px';s.el.style.top=(origin.y-r.height/2+s.dy*ease(t)+t*t*80+oy)+'px';s.el.style.transform=`rotate(${s.rot*t}deg) scale(${1-t*.55})`;s.el.style.opacity=String(1-t);});
    if(ms>=520&&ms<1060){const t=(ms-520)/540;for(let j=0;j<44;j++){const a=j*2.399,radius=unit*(.2+t*2);ctx.globalAlpha=1-t;ctx.fillStyle=j%3?color:'#fff9d5';ctx.fillRect(origin.x+Math.cos(a)*radius,origin.y+Math.sin(a)*radius,3+j%3,3+j%3);}ctx.globalAlpha=1;spell(ctx,card,origin,targets,t,ms,color,unit);}
    if(actual>=hitAt&&!impacted){impacted=true;onImpact();audio.play(card.ultimate||card.type==='연계'?'combo':card.damage?'impact':'block');document.querySelector('.battle-scene')?.classList.add('impact-shake');document.querySelector('.battle-screen')?.classList.add('skill-impact');}
-   if(actual>=hitAt){const t=clamp((actual-hitAt)/600);targets.forEach(end=>impact(ctx,card,end,t,color,unit));if(!card.damage){ctx.globalAlpha=1-t;spell(ctx,card,origin,targets,1,ms,color,unit);ctx.globalAlpha=1;}}
-   if(ms>=520)animatedSkill(ctx,card,origin,targets,clamp((ms-520)/1140),unit);
+   if(actual>=hitAt){const t=clamp((actual-hitAt)/600);root.dataset.impactFrame=String(Math.min(3,Math.floor(t*4)));targets.forEach(end=>{if(card.damage)animatedImpact(ctx,card,end,t,unit);else impact(ctx,card,end,t,color,unit);});if(!card.damage){ctx.globalAlpha=1-t;spell(ctx,card,origin,targets,1,ms,color,unit);ctx.globalAlpha=1;}}
+   if(ms>=520&&actual<hitAt)animatedSkill(ctx,card,origin,targets,clamp((ms-520)/540),unit);
    ctx.restore();if(actual<endAt)requestAnimationFrame(frame);else finish();
   }catch(e){finish(e);}}
   requestAnimationFrame(frame);
