@@ -12,14 +12,14 @@ export const CARDS = {
   protect: {name:'불굴의 맹세',owner:'aria',type:'방어',cost:1,block:9,icon:'shield',text:'동료 모두 방어 9.',flavor:'오늘도, 모두 함께 돌아간다.'},
   bond: {name:'이어진 마음',owner:'aria',type:'지원',cost:0,draw:1,mana:1,icon:'bond',text:'카드 1장 뽑기. 마나 1을 얻습니다.',flavor:'홀로 건널 수 없는 길도 있다.'},
   moon: {name:'월영 · 공명',owner:'seol',type:'연계',cost:2,damage:15,spendQi:2,spendMana:2,bonus:19,icon:'moon',text:'피해 15. 기 2 · 마나 2가 있으면 소비해 추가 피해 19.',flavor:'서로 다른 흐름이, 하나의 검 끝에서.'},
-  storm: {name:'유성우',owner:'lyra',type:'공격',cost:2,damage:12,all:true,mana:2,icon:'star',text:'모든 적에게 피해 12. 마나 2를 얻습니다.',flavor:'하늘이 무너지는 것이 아니다. 응답하는 것이다.',rarity:'희귀'},
+  storm: {burn:2,name:'유성우',owner:'lyra',type:'공격',cost:2,damage:12,all:true,mana:2,icon:'star',text:'모든 적 피해 12 · 화상 2. 마나 2를 얻습니다.',flavor:'하늘이 무너지는 것이 아니다. 응답하는 것이다.',rarity:'희귀'},
   lotus: {name:'청련검무',owner:'seol',type:'공격',cost:1,damage:7,hits:2,qi:2,icon:'lotus',text:'피해 7을 2회. 기 2를 얻습니다.',flavor:'꽃잎 하나에 검식 하나.',rarity:'희귀'},
   heal: {name:'새벽의 기도',owner:'aria',type:'지원',cost:1,heal:7,icon:'sun',text:'생존한 동료 모두 체력 7 회복.',flavor:'해가 뜨기 전이 가장 어둡다.'},
   focus: {name:'운기조식',owner:'seol',type:'지원',cost:0,qi:2,draw:1,icon:'wind',text:'기 2를 얻고 카드 1장 뽑기.',flavor:'숨을 고르면, 길이 보인다.'},
   nova: {name:'성운 붕괴',owner:'lyra',type:'연계',cost:2,damage:14,all:true,spendQi:1,spendMana:3,bonus:12,icon:'moon',text:'모든 적 피해 14. 기 1 · 마나 3을 소비하면 피해 +12.',flavor:'끝난 별이 남기는 마지막 빛.',rarity:'희귀'},
   fortress: {name:'여명의 성벽',owner:'aria',type:'방어',cost:2,block:18,draw:1,icon:'shield',text:'동료 모두 방어 18. 카드 1장 뽑기.',flavor:'우리가 서 있는 곳이 마지막 성벽.',rarity:'희귀'},
   flash: {name:'섬광보',owner:'seol',type:'공격',cost:0,damage:5,icon:'sword',text:'적 하나에게 피해 5.',flavor:'생각보다 빠르게.'},
-  frost: {name:'빙결의 룬',owner:'lyra',type:'공격',cost:1,damage:6,weak:2,mana:1,icon:'rune',text:'피해 6. 약화 2턴. 마나 1을 얻습니다.',flavor:'고요 또한 마법이다.'}
+  frost: {frozen:1,name:'빙결의 룬',owner:'lyra',type:'공격',cost:1,damage:6,weak:2,mana:1,icon:'rune',text:'피해 6 · 약화 2턴 · 빙결 1턴. 마나 1 획득.',flavor:'고요 또한 마법이다.'}
 };
 export const STARTER = ['slash','guard','spark','protect','moon','slash','spark','bash','ward','bond','guard','protect','slash','spark'];
 export const RELICS = {
