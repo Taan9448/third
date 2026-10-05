@@ -4,12 +4,13 @@ import os,shutil,json
 with sync_playwright() as p:
     browser=p.chromium.launch(headless=True,executable_path=os.environ.get('CHROMIUM_PATH') or shutil.which('chromium') or None,args=['--no-sandbox'])
     page=browser.new_page(viewport={'width':1440,'height':1060})
-    errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+    errors=[];page.add_init_script("localStorage.setItem('moonveil-profile','검증 여행자')")
+    page.on('pageerror',lambda e:errors.append(str(e)))
     page.goto(os.environ.get('GAME_URL','http://127.0.0.1:5173'),wait_until='networkidle')
     def fixture(phase,chapter=0,floor=1):
         page.evaluate('''async ({phase,chapter,floor})=>{
             const {Game}=await import('./src/engine.js');
-            const g=new Game().init();g.s.chapter=chapter;g.s.floor=floor;
+            const g=new Game();const {HEROES,STARTER}=await import('./src/data.js');delete g.s.journeyVersion;g.s.party=HEROES.map(h=>({...h,hp:h.maxHp,block:0}));g.s.deck=STARTER.map((id,i)=>({id,uid:i+1,upgraded:false}));g.s.nextUid=15;g.init();g.s.chapter=chapter;g.s.floor=floor;
             if(['chapter','ending','reward'].includes(phase)){
                 g.startBattle('boss');g.victory();
                 if(phase==='chapter')g.claimReward(null);

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,SAVE_KEY,shuffle} from '../src/engine.js';
-import {CARDS,CHAPTERS,cardInfo} from '../src/data.js';
-function fresh(){return new Game(null,()=>.42).init();}
+import {CARDS,CHAPTERS,STARTER,HEROES,cardInfo} from '../src/data.js';
+function fresh(){const g=new Game(null,()=>.42);delete g.s.journeyVersion;g.s.party=HEROES.map(h=>({...h,hp:h.maxHp,block:0}));g.s.deck=STARTER.map((id,i)=>({id,uid:i+1,upgraded:false}));g.s.nextUid=15;return g.init();}
 function hand(g,ids){g.s.battle.hand=ids.map((id,i)=>({id,uid:100+i,upgraded:false}));g.s.battle.energy=3;}
 test('opening encounter provides all party roles and affordable actions',()=>{const g=fresh();assert.equal(g.s.battle.hand.length,5);assert.equal(g.s.battle.energy,3);assert.equal(g.s.deck.length,14);assert.deepEqual(g.s.battle.hand.map(x=>x.id),['slash','spark','protect','bond','moon']);});
 test('invalid and unaffordable plays do not mutate the battle',()=>{const g=fresh();const snapshot=JSON.stringify(g.s);assert.ok(g.play(-1).error);assert.equal(JSON.stringify(g.s),snapshot);g.s.battle.energy=0;const before=JSON.stringify(g.s);assert.ok(g.play(g.s.battle.hand[0].uid).error);assert.equal(JSON.stringify(g.s),before);});
@@ -24,3 +24,27 @@ test('boss area attacks hit all living allies and honor each shield',()=>{const 
 test('chapter three always encounters the cult leader on the fifth floor',()=>{const g=fresh();g.s.chapter=2;g.s.floor=4;g.s.phase='map';g.chooseNode('battle');assert.equal(g.s.battle.enemies[0].id,'cult');});
 test('import rejects invalid targets, prototype card names, and duplicate deck ids',()=>{const g=fresh();const bad=change=>{const copy=structuredClone(g.s);change(copy);return Game.load({getItem:()=>JSON.stringify(copy)});};assert.equal(bad(s=>s.battle.enemies[0].target=7),null);assert.equal(bad(s=>s.deck[0].id='toString'),null);assert.equal(bad(s=>s.deck[1].uid=s.deck[0].uid),null);});
 test('import normalizes display names and rejects invalid retained ending battles',()=>{const g=fresh();g.s.battle.enemies[0].name='<img src=x onerror=alert(1)>';const restored=Game.load({getItem:()=>JSON.stringify(g.s)});assert.equal(restored.battle.enemies[0].name,'그림자 늑대');g.s.phase='ending';g.s.battle={};assert.equal(Game.load({getItem:()=>JSON.stringify(g.s)}),null);});
+test('alternating companions fill a persistent link gauge, capped at 100',()=>{
+ const g=fresh();g.s.battle.enemies.forEach(e=>{e.hp=e.maxHp=500;e.attack=0;});hand(g,['slash','spark','protect']);
+ g.play(100);assert.equal(g.s.battle.linkCharge,15);g.play(101);assert.equal(g.s.battle.linkCharge,40);g.play(102);assert.equal(g.s.battle.linkCharge,80);
+ g.endTurn();assert.equal(g.s.battle.linkCharge,80);hand(g,['slash','spark']);g.play(100);assert.equal(g.s.battle.linkCharge,95);g.play(101);assert.equal(g.s.battle.linkCharge,100);
+});
+test('damage preview agrees with armored multi-hit and resonant combo results without mutation',()=>{
+ for(const id of ['moon','lotus','nova']){const g=fresh();hand(g,[id]);g.s.relics.push('ribbon');const b=g.s.battle;b.qi=6;b.mana=6;b.combo=2;b.lastOwner=id==='nova'?'seol':'lyra';b.enemies.forEach(e=>{e.hp=e.maxHp=100;e.block=9;});const before=JSON.stringify(g.s),preview=g.preview(100);assert.equal(JSON.stringify(g.s),before);const result=g.play(100);assert.deepEqual(preview.targets.map(t=>t.damage),result.effects.filter(e=>e.type==='attack').map(e=>e.amount));assert.equal(preview.combo,true);}
+});
+test('ultimate choice rejects invalid or unavailable actions without spending anything',()=>{
+ const g=fresh();const before=JSON.stringify(g.s);assert.ok(g.ultimate('eclipse').error);assert.ok(g.ultimate('toString').error);assert.equal(JSON.stringify(g.s),before);g.s.battle.linkCharge=100;g.s.party[0].hp=0;const snapshot=JSON.stringify(g.s);assert.ok(g.ultimate('eclipse').error);assert.equal(JSON.stringify(g.s),snapshot);
+});
+test('single-target ultimate respects armor, consumes charge once and does not spend energy',()=>{
+ const g=fresh(),b=g.s.battle;b.linkCharge=100;b.enemies[0].hp=b.enemies[0].maxHp=100;b.enemies[0].block=7;const result=g.ultimate('eclipse');assert.equal(result.effects.find(e=>e.type==='attack').amount,25);assert.equal(b.enemies[0].weak,1);assert.equal(b.linkCharge,0);assert.equal(b.energy,3);const snapshot=JSON.stringify(g.s);assert.ok(g.ultimate('eclipse').error);assert.equal(JSON.stringify(g.s),snapshot);
+});
+test('area and sanctuary ultimate choices have distinct tactical outcomes',()=>{
+ const g=fresh();g.s.battle.linkCharge=100;g.ultimate('astral');assert.equal(g.s.battle.enemies[0].hp,14);assert.equal(g.s.battle.enemies[1].hp,6);assert.ok(g.s.battle.enemies.every(e=>e.weak===2));
+ const h=fresh();h.s.battle.linkCharge=100;h.s.party[0].hp=0;h.s.party[1].hp=20;h.ultimate('sanctuary');assert.equal(h.s.party[0].hp,0);assert.equal(h.s.party[0].block,0);assert.equal(h.s.party[1].hp,28);assert.equal(h.s.party[1].block,22);assert.equal(h.s.party[2].hp,h.s.party[2].maxHp);assert.equal(h.s.battle.linkCharge,0);
+});
+test('v2 saves migrate missing link charge and reject malformed new gauge values',()=>{
+ const g=fresh();delete g.s.battle.linkCharge;assert.equal(Game.load({getItem:()=>JSON.stringify(g.s)}).battle.linkCharge,0);for(const invalid of [-1,101,2.5,'100']){g.s.battle.linkCharge=invalid;assert.equal(Game.load({getItem:()=>JSON.stringify(g.s)}),null);}
+});
+
+test('new journey starts solo with usable martial cards and meets companions at story nodes',()=>{const g=new Game().init();assert.deepEqual(g.s.party.map(h=>h.id),['seol']);assert.equal(g.s.deck.length,8);assert.ok(g.s.deck.every(c=>CARDS[c.id].owner==='seol'));assert.equal(g.s.battle.enemies.length,1);g.s.battle.enemies[0].hp=1;g.play(g.s.battle.hand[0].uid);assert.ok(g.s.reward.every(id=>CARDS[id].owner==='seol'));g.claimReward(null);assert.deepEqual(g.nodes,['story']);g.chooseNode('story');assert.equal(g.s.phase,'story');assert.ok(g.finishStory());assert.deepEqual(g.s.party.map(h=>h.id),['seol','lyra']);assert.equal(g.s.floor,2);assert.equal(g.recruit('lyra'),false);g.s.floor=3;g.s.phase='map';g.chooseNode('story');g.finishStory();assert.deepEqual(g.s.party.map(h=>h.id),['seol','lyra','aria']);assert.equal(g.s.deck.length,16);assert.equal(g.s.floor,4);assert.ok(Game.load({getItem:()=>JSON.stringify(g.s)}));});
+test('solo save roundtrips and cannot claim unrecruited cards or invalid attack targets',()=>{const g=new Game().init();assert.ok(Game.load({getItem:()=>JSON.stringify(g.s)}));g.s.battle.enemies[0].target=1;assert.equal(Game.load({getItem:()=>JSON.stringify(g.s)}),null);g.s.battle.enemies[0].target=0;g.addCard('spark');assert.equal(Game.load({getItem:()=>JSON.stringify(g.s)}),null);});

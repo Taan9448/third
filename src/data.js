@@ -30,7 +30,7 @@ export const RELICS = {
   scroll:{name:'무명 검보',icon:'▤',text:'매 턴 기 1.',turnQi:1}
 };
 export const CHAPTERS = [
- {title:'낯선 달 아래',subtitle:'별이 잠든 숲',world:'판타지',color:'#829e75',boss:'thorn',bossName:'가시의 여왕',intro:'장문 연화와 마교의 밀담을 엿들은 설아는 쫓기다 절벽으로 떨어진다. 품속의 낡은 월석이 깨어나고, 낯선 숲에서 리라와 아리아가 그녀를 구한다. 돌아갈 길을 찾는 세 사람 앞에 숲을 잠식한 마왕의 잔재가 나타난다.',outro:'가시의 왕관 아래에는 마왕에게 뿌리를 빼앗긴 숲의 수호자가 있었다. 설아는 내공으로 오염을 끊고, 리라는 마나로 상처를 잇는다. 두 흐름의 공명은 기적이지만, 월석에는 또 하나의 금이 생긴다.'},
+ {title:'낯선 달 아래',subtitle:'별이 잠든 숲',world:'판타지',color:'#829e75',boss:'thorn',bossName:'가시의 여왕',intro:'장문 연화와 마교의 밀담을 엿들은 설아는 쫓기다 절벽으로 떨어진다. 품속의 낡은 월석이 깨어나고, 낯선 숲에서 홀로 눈을 뜬다. 별빛 폐허에서 리라를, 국경 마을에서 아리아를 만나 동료가 된다. 돌아갈 길을 찾는 세 사람 앞에 숲을 잠식한 마왕의 잔재가 나타난다.',outro:'가시의 왕관 아래에는 마왕에게 뿌리를 빼앗긴 숲의 수호자가 있었다. 설아는 내공으로 오염을 끊고, 리라는 마나로 상처를 잇는다. 두 흐름의 공명은 기적이지만, 월석에는 또 하나의 금이 생긴다.'},
  {title:'별을 삼킨 왕',subtitle:'잿빛 왕성',world:'판타지',color:'#a998ba',boss:'demon',bossName:'마왕 아스테르',intro:'마왕 아스테르는 별빛 학회의 차원 연구를 빼앗아 다른 세계의 생명으로 불멸을 꿈꾼다. 설아가 들었던 밀담의 문양이 왕성에도 새겨져 있다. 두 세계의 배신은 처음부터 하나의 거래였다.',outro:'마왕을 쓰러뜨리고 고향으로 돌아갈 문을 연다. 리라는 폐허가 된 학회의 기록을 챙기고, 아리아는 설아의 귀환에 동행한다. 문 너머의 무림에는 석 달이 아닌 삼 년이 흘렀다.'},
  {title:'돌아온 검',subtitle:'뒤집힌 청운문',world:'무림',color:'#bd8071',boss:'master',bossName:'장문 연화',intro:'연화는 마교주와 손잡고 무림을 장악했다. 말단 제자들이 저항의 씨앗이 되어 설아를 기다린다. 연화는 월석이 본래 세계의 기둥이었음을 알고도, 영생을 위해 마왕에게 그 조각을 넘겼다.',outro:'마교주와 연화를 쓰러뜨리는 마지막 공명이 봉인진을 깨뜨린다. 무림에 없는 마나가 지맥의 기와 충돌하고 하늘이 찢어진다. 승리의 순간, 설아는 자신이 재앙의 마지막 열쇠였음을 깨닫는다.'},
  {title:'경계를 꿰매는 빛',subtitle:'세계의 틈',world:'경계',color:'#b9818f',boss:'hell',bossName:'지옥왕 나락',intro:'지옥왕 나락은 두 세계의 탐욕을 부추겨 경계를 무너뜨렸다. 설아는 월석을 버리고 도망칠 수 있다. 하지만 그녀는 동료들의 손을 잡고 틈으로 들어간다. 책임은 혼자 짊어지는 벌이 아니라 함께 끝내는 약속이다.',outro:'나락의 왕관이 부서지고 세 사람은 월석에 검과 별과 맹세를 새긴다. 세계를 가르는 대신 서로의 흐름을 받아들이는 새로운 경계. 문은 닫히지만 동료들은 남는다. 설아는 작은 문파를 세운다. 출신도 세계도 묻지 않는, 돌아올 곳을.'}
@@ -55,5 +55,12 @@ export const EVENTS = [
 ];
 export function cardInfo(instance) {
  const card=CARDS[instance.id];
- return {...card,name:card.name+(instance.upgraded?' +':''),damage:card.damage?card.damage+(instance.upgraded?3:0):0,block:card.block?card.block+(instance.upgraded?3:0):0,heal:card.heal?card.heal+(instance.upgraded?3:0):0};
+ return {...card,id:instance.id,family:card.owner==='seol'?'wuxia':'fantasy',name:card.name+(instance.upgraded?' +':''),damage:card.damage?card.damage+(instance.upgraded?3:0):0,block:card.block?card.block+(instance.upgraded?3:0):0,heal:card.heal?card.heal+(instance.upgraded?3:0):0};
 }
+
+// Player-selected payoff for the party's alternating card sequence.
+export const ULTIMATES = {
+ eclipse:{id:'eclipse',name:'월영천광',owner:'seol',family:'wuxia',type:'합격절기',cost:0,damage:32,weak:1,art:'moon',text:'선택한 적 피해 32. 약화 1턴. 합격 게이지 100 소비.',flavor:'검과 별이, 한 번의 참격으로.',ultimate:true},
+ astral:{id:'astral',name:'천체연쇄',owner:'lyra',family:'fantasy',type:'합격절기',cost:0,damage:20,all:true,weak:2,art:'nova',text:'모든 적 피해 20. 약화 2턴. 합격 게이지 100 소비.',flavor:'세 사람의 약속이 하늘을 깨운다.',ultimate:true},
+ sanctuary:{id:'sanctuary',name:'서광성역',owner:'aria',family:'fantasy',type:'합격절기',cost:0,block:22,heal:8,art:'fortress',text:'생존 동료 모두 방어 22와 회복 8. 합격 게이지 100 소비.',flavor:'이 빛 안에서는 누구도 홀로 서지 않는다.',ultimate:true}
+};

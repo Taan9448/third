@@ -1,24 +1,52 @@
-// Card-origin animation. Gameplay changes once, at the impact frame.
-function copyCard(source){const clone=source.cloneNode(true);clone.removeAttribute('data-action');clone.removeAttribute('data-uid');clone.removeAttribute('aria-disabled');clone.classList.remove('unplayable');clone.tabIndex=-1;const src=[...source.querySelectorAll('canvas')];clone.querySelectorAll('canvas').forEach((c,i)=>{c.width=src[i].width;c.height=src[i].height;c.getContext('2d').drawImage(src[i],0,0);});return clone;}
-const clips=['polygon(0 0,52% 0,38% 37%,0 30%)','polygon(52% 0,100% 0,100% 35%,38% 37%)','polygon(0 30%,38% 37%,62% 64%,0 70%)','polygon(38% 37%,100% 35%,100% 70%,62% 64%)','polygon(0 70%,62% 64%,49% 100%,0 100%)','polygon(62% 64%,100% 70%,100% 100%,49% 100%)'];
-const ease=t=>1-Math.pow(1-t,3),clamp=t=>Math.max(0,Math.min(1,t));
+import {clamp,ease,circle,spell,impact,animatedSkill} from './effects.js';
+function copyCard(source){
+ const clone=source.cloneNode(true);clone.removeAttribute('data-action');clone.removeAttribute('data-uid');clone.removeAttribute('aria-disabled');clone.classList.remove('unplayable');clone.tabIndex=-1;
+ const src=[...source.querySelectorAll('canvas')];clone.querySelectorAll('canvas').forEach((c,i)=>{c.width=src[i].width;c.height=src[i].height;c.getContext('2d').drawImage(src[i],0,0);});return clone;
+}
+// Twenty-four textured triangular fragments, rather than six paper slabs.
+function fragments(){const list=[];for(let row=0;row<4;row++)for(let col=0;col<3;col++)for(let side=0;side<2;side++){
+ const x=col*100/3,y=row*25,w=100/3,h=25;
+ const points=side?[[x,y],[x+w,y+h],[x,y+h]]:[[x,y],[x+w,y],[x+w,y+h]];
+ const index=list.length;list.push({clip:'polygon('+points.map(p=>p.join('% ')+'%').join(',')+')',dx:(col-1)*115+Math.sin(index*2.4)*65,dy:(row-1.5)*83+Math.cos(index*1.7)*35,rot:Math.sin(index*3.1)*135});
+ }return list;}
 export function castCard({element,card,scene,targets,onImpact,audio}){
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- if(reduced)return new Promise(resolve=>{element.classList.add('card-casting');setTimeout(()=>{onImpact();audio.play(card.damage?'attack':'block');setTimeout(resolve,180);},90);});
- const r=element.getBoundingClientRect(),arena=scene.canvas.getBoundingClientRect(),color=card.owner==='seol'?'#86ffe1':card.owner==='lyra'?'#d1a7ff':'#ffe19a';
- const origin={x:arena.left+arena.width*.43,y:arena.top+arena.height*.65},start={x:r.left+r.width/2,y:r.top+r.height/2};
- const root=document.createElement('div');root.className='cast-layer';root.dataset.phase='lift';root.style.setProperty('--cast-color',color);root.setAttribute('aria-hidden','true');
+ if(reduced)return new Promise((resolve,reject)=>{element.classList.add('card-casting');setTimeout(()=>{try{onImpact();audio.play(card.damage?'attack':'block');setTimeout(resolve,180);}catch(e){reject(e);}},90);});
+ const r=element.getBoundingClientRect(),arena=scene.canvas.getBoundingClientRect();
+ const color=card.id==='frost'?'#87e9ff':card.family==='wuxia'?'#73ffe0':card.owner==='aria'?'#ffdb83':'#c495ff';
+ const origin={x:arena.left+arena.width*.48,y:arena.top+arena.height*(innerWidth<=700?.43:.36)},start={x:r.left+r.width/2,y:r.top+r.height/2};
+ const unit=Math.max(46,Math.min(112,arena.width*.09)),rate=card.ultimate?1.4:1,hitAt=1060*rate,endAt=1660*rate;
+ const root=document.createElement('div');root.className='cast-layer'+(card.ultimate?' ultimate-cast':'');root.dataset.skill=card.id;root.dataset.phase='lift';root.style.setProperty('--cast-color',color);root.setAttribute('aria-hidden','true');
+ const veil=document.createElement('div');veil.className='cast-veil';root.append(veil);
+ const banner=document.createElement('div');banner.className='skill-banner';const label=document.createElement('small');label.textContent=card.ultimate?'합격절기 · 동료들의 힘':card.family==='wuxia'?'청운 검보 · 무공':'별의 기록 · 판타지';const name=document.createElement('strong');name.textContent=card.name;banner.append(label,name);root.append(banner);
  const fly=document.createElement('div');fly.className='cast-card';fly.style.width=r.width+'px';fly.style.height=r.height+'px';fly.append(copyCard(element));root.append(fly);
- const crack=document.createElementNS('http://www.w3.org/2000/svg','svg');crack.setAttribute('viewBox','0 0 100 160');crack.classList.add('card-cracks');crack.innerHTML='<path d="M49 0 44 26 55 40 38 59 58 81 46 103 57 126 49 160 M38 59 18 45 0 49 M58 81 83 64 100 67 M46 103 24 113 0 106 M57 126 78 135 100 127" />';fly.append(crack);
- const canvas=document.createElement('canvas');canvas.className='cast-canvas';const pixelScale=1/3;canvas.width=Math.ceil(innerWidth*pixelScale);canvas.height=Math.ceil(innerHeight*pixelScale);const ctx=canvas.getContext('2d');ctx.scale(pixelScale,pixelScale);ctx.imageSmoothingEnabled=false;root.append(canvas);document.body.append(root);element.classList.add('card-casting');audio.play('charge');
- const shards=clips.map((clip,i)=>{const fragment=document.createElement('div');fragment.className='card-shard';fragment.style.width=r.width+'px';fragment.style.height=r.height+'px';fragment.style.clipPath=clip;fragment.append(copyCard(element));root.append(fragment);return{el:fragment,dx:[-155,130,-190,185,-115,95][i],dy:[-130,-150,15,20,130,170][i],rot:[-38,32,-65,57,-22,48][i]};});
- const particles=Array.from({length:75},(_,i)=>({a:i*2.399,v:45+(i%13)*11,size:2+i%4}));
- return new Promise(resolve=>{const at=performance.now(),scrollAt={x:scrollX,y:scrollY};let impacted=false;function frame(now){const ms=now-at,ox=scrollAt.x-scrollX,oy=scrollAt.y-scrollY;ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();ctx.translate(ox,oy);const lift=ease(clamp(ms/270)),x=start.x+(origin.x-start.x)*lift,y=start.y+(origin.y-start.y)*lift;fly.style.left=(x-r.width/2+ox)+'px';fly.style.top=(y-r.height/2+oy)+'px';fly.style.transform=`rotate(${-9*lift}deg) scale(${1+.1*lift})`;crack.style.opacity=clamp((ms-240)/150);fly.style.opacity=ms<510?1:0;
- root.dataset.phase=ms<270?'lift':ms<510?'fracture':ms<970?'projectile':'impact';
- if(ms>=270&&ms<730){const pulse=clamp((ms-270)/330);ctx.save();ctx.globalAlpha=1-clamp((ms-600)/150);ctx.strokeStyle=color;ctx.lineWidth=2;ctx.shadowColor=color;ctx.shadowBlur=25;ctx.beginPath();ctx.ellipse(origin.x,origin.y,60+pulse*65,60+pulse*65,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
- shards.forEach(s=>{const t=clamp((ms-510)/560);s.el.style.display=ms>=510?'block':'none';s.el.style.left=(origin.x-r.width/2+s.dx*ease(t)+ox)+'px';s.el.style.top=(origin.y-r.height/2+s.dy*ease(t)+oy)+'px';s.el.style.transform=`rotate(${s.rot*t-9}deg) scale(${1+.1*(1-t)})`;s.el.style.opacity=(1-t)*.95;});
- if(ms>=520&&ms<980){const t=clamp((ms-520)/450);targets.forEach((end,i)=>{const px=origin.x+(end.x-origin.x)*ease(t),py=origin.y+(end.y-origin.y)*t-Math.sin(t*Math.PI)*(card.owner==='lyra'?70:20);ctx.save();ctx.strokeStyle=color;ctx.fillStyle='#fff8ed';ctx.lineWidth=card.type==='연계'?9:5;ctx.shadowColor=color;ctx.shadowBlur=22;ctx.beginPath();ctx.moveTo(origin.x,origin.y);ctx.quadraticCurveTo((origin.x+px)/2,(origin.y+py)/2-(card.owner==='lyra'?45:0),px,py);ctx.stroke();ctx.globalAlpha=.65;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(origin.x-5,origin.y+5);ctx.lineTo(px-5,py+5);ctx.stroke();ctx.globalAlpha=1;if(card.owner==='lyra'){ctx.translate(px,py);ctx.rotate(ms*.013+i);ctx.beginPath();ctx.moveTo(0,-15);ctx.lineTo(5,-5);ctx.lineTo(15,0);ctx.lineTo(5,5);ctx.lineTo(0,15);ctx.lineTo(-5,5);ctx.lineTo(-15,0);ctx.lineTo(-5,-5);ctx.closePath();ctx.fill();}else{ctx.translate(px,py);ctx.rotate(Math.atan2(end.y-origin.y,end.x-origin.x)+.65);ctx.fillRect(-3,-28,6,56);ctx.fillStyle=color;ctx.fillRect(-10,-25,3,50);}ctx.restore();});}
- if(ms>=970&&!impacted){impacted=true;onImpact();audio.play(card.type==='연계'?'combo':card.damage?'attack':'block');document.querySelector('.battle-scene')?.classList.add('impact-shake');}
- if(ms>=970){const t=clamp((ms-970)/500);targets.forEach(end=>{ctx.save();ctx.globalAlpha=1-t;ctx.strokeStyle=color;ctx.lineWidth=5*(1-t);ctx.shadowColor=color;ctx.shadowBlur=20;ctx.beginPath();ctx.ellipse(end.x,end.y,12+t*75,12+t*75,0,0,Math.PI*2);ctx.stroke();particles.forEach(p=>{ctx.fillStyle=p.size%2?color:'#fff6dc';ctx.fillRect(end.x+Math.cos(p.a)*p.v*t,end.y+Math.sin(p.a)*p.v*t-p.v*.1*t,p.size,p.size);});if(card.damage){ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(end.x-70,end.y+65);ctx.lineTo(end.x+70,end.y-65);ctx.stroke();}ctx.restore();});}
- ctx.restore();if(ms<1500)requestAnimationFrame(frame);else{root.remove();document.querySelector('.impact-shake')?.classList.remove('impact-shake');resolve();}}requestAnimationFrame(frame);});
+ const crack=document.createElementNS('http://www.w3.org/2000/svg','svg');crack.setAttribute('viewBox','0 0 100 150');crack.classList.add('card-cracks');
+ crack.innerHTML='<path d="M48 0 51 18 40 29 54 46 44 62 60 78 44 96 57 116 49 150 M40 29 23 32 15 19 0 24 M54 46 71 39 81 52 100 45 M44 62 30 74 16 67 0 82 M60 78 75 84 85 71 100 78 M44 96 30 101 22 121 0 115 M57 116 74 128 88 118 100 130" />';fly.append(crack);
+ const canvas=document.createElement('canvas');canvas.className='cast-canvas';const scale=.5;canvas.width=Math.ceil(innerWidth*scale);canvas.height=Math.ceil(innerHeight*scale);const ctx=canvas.getContext('2d');ctx.scale(scale,scale);ctx.imageSmoothingEnabled=false;root.append(canvas);document.body.append(root);
+ element.classList.add('card-casting');scene.perform?.(card);audio.play('charge');
+ const shards=fragments().map(s=>{const el=document.createElement('div');el.className='card-shard';el.style.width=r.width+'px';el.style.height=r.height+'px';el.style.clipPath=s.clip;el.append(copyCard(element));root.append(el);return {...s,el};});
+ return new Promise((resolve,reject)=>{
+  const at=performance.now(),scrollAt={x:scrollX,y:scrollY};let impacted=false,shattered=false;
+  function finish(error){root.remove();document.querySelector('.battle-scene')?.classList.remove('impact-shake');document.querySelector('.battle-screen')?.classList.remove('skill-impact');error?reject(error):resolve();}
+  function frame(now){try{
+   const actual=now-at,ms=actual/rate,ox=scrollAt.x-scrollX,oy=scrollAt.y-scrollY;
+   ctx.clearRect(0,0,innerWidth,innerHeight);ctx.save();ctx.translate(ox,oy);
+   root.dataset.skillFrame=String(Math.max(0,Math.min(3,Math.floor((ms-520)/1140*4))));
+   root.dataset.phase=ms<220?'lift':ms<520?'fracture':actual<hitAt?'projectile':'impact';
+   const lift=ease(ms/220),x=start.x+(origin.x-start.x)*lift,y=start.y+(origin.y-start.y)*lift;
+   fly.style.left=(x-r.width/2+ox)+'px';fly.style.top=(y-r.height/2+oy)+'px';fly.style.transform=`rotate(${Math.sin(ms*.045)*clamp((ms-220)/140)*2}deg) scale(${1+lift*.06})`;fly.style.opacity=ms<520?1:0;
+   crack.style.opacity=clamp((ms-210)/130);crack.style.strokeDashoffset=String(700*(1-clamp((ms-220)/300)));
+   veil.style.opacity=String(Math.min(card.ultimate?.45:.22,clamp(ms/300)*.3)*(1-clamp((actual-hitAt)/450)));
+   banner.style.opacity=String(clamp((ms-100)/160)*(1-clamp((actual-hitAt-200)/300)));
+   if(ms>220&&ms<840){ctx.globalAlpha=1-clamp((ms-620)/220);circle(ctx,origin.x,origin.y,unit*(.7+clamp((ms-220)/250)*.7),ms*.003,color);ctx.globalAlpha=1;}
+   if(ms>=520&&!shattered){shattered=true;audio.play('shatter');}
+   shards.forEach((s,i)=>{const t=clamp((ms-520)/470);s.el.style.display=ms>=520&&t<1?'block':'none';s.el.style.left=(origin.x-r.width/2+s.dx*ease(t)+ox)+'px';s.el.style.top=(origin.y-r.height/2+s.dy*ease(t)+t*t*80+oy)+'px';s.el.style.transform=`rotate(${s.rot*t}deg) scale(${1-t*.55})`;s.el.style.opacity=String(1-t);});
+   if(ms>=520&&ms<1060){const t=(ms-520)/540;for(let j=0;j<44;j++){const a=j*2.399,radius=unit*(.2+t*2);ctx.globalAlpha=1-t;ctx.fillStyle=j%3?color:'#fff9d5';ctx.fillRect(origin.x+Math.cos(a)*radius,origin.y+Math.sin(a)*radius,3+j%3,3+j%3);}ctx.globalAlpha=1;spell(ctx,card,origin,targets,t,ms,color,unit);}
+   if(actual>=hitAt&&!impacted){impacted=true;onImpact();audio.play(card.ultimate||card.type==='연계'?'combo':card.damage?'impact':'block');document.querySelector('.battle-scene')?.classList.add('impact-shake');document.querySelector('.battle-screen')?.classList.add('skill-impact');}
+   if(actual>=hitAt){const t=clamp((actual-hitAt)/600);targets.forEach(end=>impact(ctx,card,end,t,color,unit));if(!card.damage){ctx.globalAlpha=1-t;spell(ctx,card,origin,targets,1,ms,color,unit);ctx.globalAlpha=1;}}
+   if(ms>=520)animatedSkill(ctx,card,origin,targets,clamp((ms-520)/1140),unit);
+   ctx.restore();if(actual<endAt)requestAnimationFrame(frame);else finish();
+  }catch(e){finish(e);}}
+  requestAnimationFrame(frame);
+ });
 }
