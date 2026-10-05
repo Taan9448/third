@@ -64,7 +64,7 @@ export class Game {
  claimReward(id){if(this.s.phase!=='reward')return false;if(id&&!this.s.reward.includes(id))return false;if(id)this.addCard(id);this.finishNode();return true;}
  finishNode(){if(this.s.battle?.type==='boss'&&this.s.phase==='reward'){this.s.phase='chapter';return;}this.s.floor++;this.s.phase='map';this.s.battle=null;}
  nextChapter(){if(this.s.phase!=='chapter')return;if(this.s.chapter===3){this.s.phase='ending';return;}this.s.chapter++;this.s.floor=0;this.s.battle=null;this.heal(25,true);this.s.phase='map';}
- chooseNode(type){if(this.s.phase!=='map'||!this.nodes.includes(type))return false;this.s.battle=null;if(['battle','elite','boss'].includes(type))this.startBattle(type);else this.s.phase=type;return true;}
+ chooseNode(type){if(this.s.phase!=='map'||!this.nodes.includes(type))return false;this.s.battle=null;if(['battle','elite','boss'].includes(type))this.startBattle(type,this.s.chapter===0&&this.s.floor===0&&this.s.battles===0);else this.s.phase=type;return true;}
  rest(){if(this.s.phase!=='rest')return;this.heal(26,true);this.log('야영 · 모든 동료 체력 26 회복');this.finishNode();}
  upgrade(uid){const card=this.s.deck.find(c=>c.uid===uid);if(!card||card.upgraded)return false;card.upgraded=true;this.log(`${CARDS[card.id].name} 강화`);return true;}
  remove(uid){if(this.s.deck.length<=8)return false;const i=this.s.deck.findIndex(c=>c.uid===uid);if(i<0)return false;this.log(`${CARDS[this.s.deck[i].id].name} 제거`);this.s.deck.splice(i,1);return true;}
