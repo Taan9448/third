@@ -1,0 +1,366 @@
+{
+  "wins": 30,
+  "runs": 30,
+  "results": [
+    {
+      "seed": 1,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        73
+      ],
+      "battles": 16,
+      "steps": 383
+    },
+    {
+      "seed": 2,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        78
+      ],
+      "battles": 16,
+      "steps": 361
+    },
+    {
+      "seed": 3,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        41,
+        78
+      ],
+      "battles": 16,
+      "steps": 328
+    },
+    {
+      "seed": 4,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        63,
+        44,
+        71
+      ],
+      "battles": 16,
+      "steps": 338
+    },
+    {
+      "seed": 5,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        60
+      ],
+      "battles": 16,
+      "steps": 377
+    },
+    {
+      "seed": 6,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        38,
+        78
+      ],
+      "battles": 16,
+      "steps": 438
+    },
+    {
+      "seed": 7,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        59
+      ],
+      "battles": 16,
+      "steps": 352
+    },
+    {
+      "seed": 8,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        58
+      ],
+      "battles": 16,
+      "steps": 399
+    },
+    {
+      "seed": 9,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        53,
+        26,
+        65
+      ],
+      "battles": 16,
+      "steps": 343
+    },
+    {
+      "seed": 10,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        59,
+        34,
+        61
+      ],
+      "battles": 16,
+      "steps": 355
+    },
+    {
+      "seed": 11,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        34,
+        78
+      ],
+      "battles": 16,
+      "steps": 381
+    },
+    {
+      "seed": 12,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        66,
+        48,
+        72
+      ],
+      "battles": 16,
+      "steps": 354
+    },
+    {
+      "seed": 13,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        41,
+        73
+      ],
+      "battles": 16,
+      "steps": 372
+    },
+    {
+      "seed": 14,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        78
+      ],
+      "battles": 16,
+      "steps": 357
+    },
+    {
+      "seed": 15,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        58,
+        19,
+        65
+      ],
+      "battles": 16,
+      "steps": 368
+    },
+    {
+      "seed": 16,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        58,
+        34,
+        78
+      ],
+      "battles": 16,
+      "steps": 386
+    },
+    {
+      "seed": 17,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        46,
+        44,
+        62
+      ],
+      "battles": 16,
+      "steps": 353
+    },
+    {
+      "seed": 18,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        61,
+        34,
+        78
+      ],
+      "battles": 16,
+      "steps": 343
+    },
+    {
+      "seed": 19,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        37,
+        35,
+        66
+      ],
+      "battles": 16,
+      "steps": 336
+    },
+    {
+      "seed": 20,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        47,
+        57
+      ],
+      "battles": 16,
+      "steps": 394
+    },
+    {
+      "seed": 21,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        50,
+        48,
+        78
+      ],
+      "battles": 16,
+      "steps": 370
+    },
+    {
+      "seed": 22,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        69
+      ],
+      "battles": 16,
+      "steps": 399
+    },
+    {
+      "seed": 23,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        35,
+        78
+      ],
+      "battles": 16,
+      "steps": 413
+    },
+    {
+      "seed": 24,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        64,
+        34,
+        71
+      ],
+      "battles": 16,
+      "steps": 353
+    },
+    {
+      "seed": 25,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        39,
+        46,
+        52
+      ],
+      "battles": 16,
+      "steps": 372
+    },
+    {
+      "seed": 26,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        48,
+        78
+      ],
+      "battles": 16,
+      "steps": 366
+    },
+    {
+      "seed": 27,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        62,
+        34,
+        71
+      ],
+      "battles": 16,
+      "steps": 398
+    },
+    {
+      "seed": 28,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        52,
+        32,
+        76
+      ],
+      "battles": 16,
+      "steps": 353
+    },
+    {
+      "seed": 29,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        68,
+        43,
+        53
+      ],
+      "battles": 16,
+      "steps": 372
+    },
+    {
+      "seed": 30,
+      "result": "ending",
+      "chapter": 4,
+      "hp": [
+        58,
+        40,
+        76
+      ],
+      "battles": 16,
+      "steps": 358
+    }
+  ]
+}
