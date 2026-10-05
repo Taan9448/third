@@ -16,12 +16,14 @@ for(let seed=1;seed<=30;seed++){
     if(c.heal)s.party.forEach(h=>{if(h.hp>0)value+=Math.min(h.maxHp-h.hp,c.heal)*1.5;});
     value+=(c.draw||0)*6+Math.min(6-b.qi,c.qi||0)*2+Math.min(6-b.mana,c.mana||0)*2+(harm?4:0);value/=(c.cost||.3);return {uid:x.uid,value};
    }).sort((a,b)=>b.value-a.value);
+   if(b.linkCharge>=100){const threatened=s.party.some(h=>h.hp>0&&h.hp<20);const choice=threatened&&!g.canUltimate('sanctuary')?'sanctuary':alive.length>1&&!g.canUltimate('astral')?'astral':'eclipse';if(!g.canUltimate(choice)){g.ultimate(choice);continue;}}
    if(scored.length&&scored[0].value>0)g.play(scored[0].uid);else g.endTurn();
   }else if(s.phase==='reward'){
    const priority=['heal','lotus','storm','fortress','nova','focus','frost'];
    const best=[...s.reward].sort((a,b)=>(priority.includes(a)?priority.indexOf(a):100)-(priority.includes(b)?priority.indexOf(b):100))[0];
    const copies=s.deck.filter(c=>c.id===best).length;g.claimReward(priority.includes(best)&&copies<2?best:null);
-  }else if(s.phase==='map'){const preferred=s.floor===1?'shop':s.floor===2?'elite':s.floor===3?'rest':s.floor===4?'battle':s.floor===5?'boss':'battle';g.chooseNode(preferred);}
+  }else if(s.phase==='map'){const preferred=s.floor===1?'shop':s.floor===2?'elite':s.floor===3?'rest':s.floor===4?'battle':s.floor===5?'boss':'battle';g.chooseNode(g.nodes.includes(preferred)?preferred:g.nodes[0]);}
+  else if(s.phase==='story')g.finishStory();
   else if(s.phase==='rest')g.rest();
   else if(s.phase==='shop'){if(s.gold>=45&&s.deck.filter(c=>c.id==='heal').length<2)g.buyCard('heal');else if(s.gold>=45&&s.deck.filter(c=>c.id==='lotus').length<2&&s.chapter===0)g.buyCard('lotus');else if(s.gold>=45&&s.deck.filter(c=>c.id==='fortress').length<1)g.buyCard('fortress');g.finishNode();}
   else if(s.phase==='chapter')g.nextChapter();

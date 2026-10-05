@@ -104,5 +104,17 @@ export function cardArt(canvas,icon,owner){canvas.width=160;canvas.height=84;con
 }
 export class AudioFX {
  constructor(){this.enabled=true;this.ctx=null;}
- play(type='attack'){if(!this.enabled)return;try{const C=window.AudioContext||window.webkitAudioContext;this.ctx??=new C();this.ctx.resume();const ctx=this.ctx,t=ctx.currentTime;const osc=ctx.createOscillator(),gain=ctx.createGain();osc.type=type==='attack'?'sawtooth':'sine';osc.frequency.setValueAtTime(type==='attack'?330:type==='enemy'?140:520,t);osc.frequency.exponentialRampToValueAtTime(type==='attack'?70:260,t+.16);gain.gain.setValueAtTime(.055,t);gain.gain.exponentialRampToValueAtTime(.001,t+.22);osc.connect(gain);gain.connect(ctx.destination);osc.start(t);osc.stop(t+.23);if(type==='combo'){for(let i=0;i<3;i++){const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=[523,659,784][i];g.gain.setValueAtTime(.035,t+i*.06);g.gain.exponentialRampToValueAtTime(.001,t+.7);o.connect(g);g.connect(ctx.destination);o.start(t+i*.06);o.stop(t+.7);}}}catch{/* Sound is optional. */}}
+ play(type='attack'){
+  if(!this.enabled)return;
+  try{
+   const C=window.AudioContext||window.webkitAudioContext;this.ctx??=new C();this.ctx.resume();const ctx=this.ctx,t=ctx.currentTime;
+   const tone=(frequency,end,duration,volume,wave='sine',delay=0)=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type=wave;o.frequency.setValueAtTime(frequency,t+delay);o.frequency.exponentialRampToValueAtTime(end,t+delay+duration);g.gain.setValueAtTime(volume,t+delay);g.gain.exponentialRampToValueAtTime(.001,t+delay+duration);o.connect(g);g.connect(ctx.destination);o.start(t+delay);o.stop(t+delay+duration+.01);};
+   const noise=(duration,volume,high=false)=>{const b=ctx.createBuffer(1,Math.floor(ctx.sampleRate*duration),ctx.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=(Math.random()*2-1)*(1-i/a.length);const source=ctx.createBufferSource(),filter=ctx.createBiquadFilter(),g=ctx.createGain();source.buffer=b;filter.type=high?'highpass':'lowpass';filter.frequency.value=high?1700:170;g.gain.value=volume;source.connect(filter);filter.connect(g);g.connect(ctx.destination);source.start(t);};
+   if(type==='charge'){tone(180,680,.38,.025,'triangle');tone(360,1360,.36,.014,'sine');}
+   else if(type==='shatter'){noise(.15,.04,true);for(let i=0;i<4;i++)tone(1400+i*470,600,.12,.008,'triangle',i*.018);}
+   else if(type==='impact'||type==='attack'||type==='enemy'){noise(.22,.075);tone(type==='enemy'?100:160,35,.26,.065,'triangle');tone(420,80,.12,.03,'sawtooth');}
+   else if(type==='combo'){noise(.32,.075);tone(110,30,.38,.075,'triangle');[392,523,659,784].forEach((f,i)=>tone(f,f*1.03,.55,.018,'sine',i*.055));}
+   else{tone(460,680,.22,.035,'sine');tone(690,920,.32,.02,'triangle',.035);}
+  }catch{/* Sound is optional; no external audio dependency. */}
+ }
 }
